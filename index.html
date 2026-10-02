@@ -1,843 +1,930 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>全開！フェイスアップ・マスター | コンビニ棚整頓ゲーム</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            rounded: ['"M PLUS Rounded 1c"', 'sans-serif'],
-          },
-          animation: {
-            'bounce-short': 'bounceShort 0.3s ease-in-out',
-            'shake': 'shake 0.4s ease-in-out',
-            'pulse-fast': 'pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          },
-          keyframes: {
-            bounceShort: {
-              '0%, 100%': { transform: 'scale(1)' },
-              '50%': { transform: 'scale(0.92)' },
-            },
-            shake: {
-              '0%, 100%': { transform: 'translateX(0)' },
-              '20%, 60%': { transform: 'translateX(-6px)' },
-              '40%, 80%': { transform: 'translateX(6px)' },
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>全開！フェイスアップ・マスター</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            margin: 0;
+            padding: 0;
         }
-      }
-    }
-  </script>
-  <style>
-    body {
-      font-family: 'M PLUS Rounded 1c', sans-serif;
-      touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    .shelf-depth {
-      box-shadow: inset 0 8px 12px -2px rgba(0, 0, 0, 0.5), inset 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
-    }
-    .neon-text-green {
-      text-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
-    }
-    .neon-text-red {
-      text-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
-    }
-    /* Custom Scrollbar for rankings or stats if needed */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #1e293b; }
-    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-  </style>
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #111827;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            color: #fff;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at center, #1f2937 0%, #111827 100%);
+        }
+
+        header {
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        .status-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .status-title {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-size: 22px;
+            font-weight: 900;
+            color: #fbbf24;
+        }
+
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-value {
+            font-size: 26px;
+            font-weight: 900;
+            color: #38bdf8;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+        }
+
+        .store-health-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 6px 16px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 9;
+        }
+
+        .health-bar-bg {
+            width: 100%;
+            height: 16px;
+            background: #1f2937;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #374151;
+            margin-top: 2px;
+            position: relative;
+        }
+
+        .health-bar-threshold {
+            position: absolute;
+            left: 80%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #f59e0b;
+            z-index: 5;
+            box-shadow: 0 0 4px #f59e0b;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        main {
+            flex-grow: 1;
+            width: 100%;
+            max-width: 520px;
+            padding: 10px;
+            display: grid;
+            gap: 8px;
+            position: relative;
+            align-content: center;
+        }
+
+        main.grid-3x3 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        main.grid-4x3 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+
+        .shelf-slot {
+            background: #1f2937;
+            border-radius: 8px;
+            border: 2px solid #374151;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            box-shadow: inset 0 8px 16px rgba(0,0,0,0.8);
+            perspective: 400px;
+            cursor: pointer;
+            min-height: 80px;
+        }
+
+        .shelf-shadow {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.85) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .product-item {
+            width: 80%;
+            height: 72%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            position: relative;
+            z-index: 2;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.27), filter 0.15s;
+            transform-origin: bottom center;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+            pointer-events: none;
+        }
+
+        .shelf-slot.receded .product-item {
+            transform: scale(0.6) translateY(-24px);
+            filter: brightness(0.5) drop-shadow(0 2px 3px rgba(0,0,0,0.9));
+        }
+
+        .shelf-slot.pull-forward .product-item {
+            animation: pullForward 0.2s ease-out forwards;
+        }
+
+        @keyframes pullForward {
+            0% { transform: scale(0.6) translateY(-24px); filter: brightness(0.5); }
+            70% { transform: scale(1.1) translateY(2px); filter: brightness(1.3); }
+            100% { transform: scale(1) translateY(0); filter: brightness(1); }
+        }
+
+        .misplaced-item {
+            position: absolute;
+            top: 6%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            z-index: 10;
+            cursor: grab;
+            filter: drop-shadow(0 8px 15px rgba(239, 68, 68, 0.9));
+            animation: pulseAttention 0.5s infinite alternate cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        @keyframes pulseAttention {
+            0% { transform: scale(0.95) rotate(-5deg); }
+            100% { transform: scale(1.15) rotate(5deg); }
+        }
+
+        .misplaced-item.dragging {
+            position: fixed !important;
+            width: 65px !important;
+            height: 65px !important;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transform: translate(-50%, -50%) scale(1.1) !important;
+            animation: none !important;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.8));
+        }
+
+        .price-tag {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #111827;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 3px;
+            z-index: 3;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
+
+        .customer-bubble {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: #fff;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 8px;
+            white-space: nowrap;
+            z-index: 4;
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            animation: popIn 0.2s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: translateX(-50%) scale(0); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        .warning-border {
+            position: absolute;
+            inset: 0;
+            border: 3px solid #ef4444;
+            border-radius: 6px;
+            pointer-events: none;
+            z-index: 5;
+            animation: warningBlink 0.3s infinite alternate;
+        }
+
+        @keyframes warningBlink {
+            0% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        #fx-canvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 500;
+        }
+
+        .floating-score {
+            position: absolute;
+            font-size: 26px;
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 600;
+            animation: floatUp 0.7s ease-out forwards;
+        }
+
+        .floating-score.penalty {
+            color: #ef4444;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 2px 2px 0 #000;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -20px) scale(1.3); }
+            100% { opacity: 0; transform: translate(-50%, -50px) scale(1); }
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(17, 24, 39, 0.96);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+
+        .overlay.hidden { display: none; }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fbbf24;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .game-desc {
+            font-size: 13px;
+            color: #e5e7eb;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .start-btn {
+            padding: 14px 44px;
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 6px #047857, 0 10px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .start-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px #047857, 0 5px 10px rgba(0,0,0,0.5);
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 overflow-x-hidden">
+<body>
 
-  <!-- Top Bar / Header -->
-  <header class="w-full max-w-lg flex items-center justify-between bg-slate-800/90 border-2 border-emerald-500/50 rounded-2xl p-3 shadow-lg backdrop-blur-md mb-2">
-    <div class="flex items-center gap-2">
-      <div class="bg-emerald-500 text-slate-950 font-black text-xs px-2 py-1 rounded-md tracking-wider">7-ELEVEN風</div>
-      <h1 class="text-sm sm:text-base font-black text-emerald-400 tracking-tight">フェイスアップ★マスター</h1>
-    </div>
-    <div class="flex items-center gap-2">
-      <button id="soundToggleBtn" class="bg-slate-700 hover:bg-slate-600 text-xs px-2.5 py-1.5 rounded-lg border border-slate-500 flex items-center gap-1 transition">
-        <span id="soundIcon">🔊</span> <span id="soundStatus" class="hidden sm:inline">ON</span>
-      </button>
-    </div>
-  </header>
+<div id="game-container">
+    <canvas id="fx-canvas"></canvas>
 
-  <!-- Main Game Container -->
-  <main class="w-full max-w-lg flex flex-col items-center flex-1 justify-center relative">
-
-    <!-- Status Dashboard -->
-    <div id="dashboard" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-3 shadow-xl mb-3 flex flex-col gap-2 relative overflow-hidden">
-      
-      <!-- Top Row: Stage & Timer & Score -->
-      <div class="flex justify-between items-center text-xs sm:text-sm font-bold">
-        <div class="bg-slate-700/80 border border-slate-600 px-2.5 py-1 rounded-lg text-emerald-300 flex items-center gap-1">
-          <span>シフト:</span>
-          <span id="stageName" class="text-white">---</span>
-        </div>
-        <div class="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-3 py-1 rounded-lg text-amber-300">
-          <span>⏱️ 残り:</span>
-          <span id="timerDisplay" class="text-lg font-black font-mono text-amber-400">30</span><span class="text-xs">秒</span>
-        </div>
-        <div class="bg-slate-700/80 border border-slate-600 px-2.5 py-1 rounded-lg text-cyan-300">
-          <span>SCORE:</span>
-          <span id="scoreDisplay" class="text-white font-mono font-bold text-base">0</span>
-        </div>
-      </div>
-
-      <!-- Cleanliness Bar (本部監査メーター) -->
-      <div>
-        <div class="flex justify-between items-center text-xs font-black mb-1">
-          <span class="text-slate-300 flex items-center gap-1">
-            <span>🏪 店内キレイ度 (本部監査度)</span>
-          </span>
-          <span id="cleanGaugeText" class="text-emerald-400 font-mono text-sm">100%</span>
-        </div>
-        <div class="w-full bg-slate-900 rounded-full h-4 p-0.5 border border-slate-700 relative overflow-hidden shadow-inner">
-          <div id="cleanGaugeBar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-200 w-full"></div>
-        </div>
-      </div>
-
-      <!-- Combo & Fever Bar Row -->
-      <div class="flex justify-between items-center gap-2 text-xs font-bold pt-1">
-        <!-- Combo Display -->
-        <div class="flex items-center gap-1 min-w-[100px]">
-          <span id="comboCounter" class="text-xl font-black italic text-yellow-400 opacity-0 transition-all scale-75">
-            0 <span class="text-xs not-italic">COMBO!</span>
-          </span>
+    <header>
+        <div class="status-box">
+            <span class="status-title">STAGE</span>
+            <span id="stage-val" class="status-value">1</span>
         </div>
 
-        <!-- Manager Fever Button -->
-        <button id="feverBtn" disabled class="flex-1 bg-slate-700 text-slate-400 font-black py-1.5 px-3 rounded-xl border border-slate-600 shadow transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-          <span class="text-base">📢</span>
-          <span id="feverText">店長の一声 (0%)</span>
-        </button>
-      </div>
+        <div class="timer-container">
+            <span class="status-title">残り時間</span>
+            <span id="timer-val" class="timer-value">20s</span>
+        </div>
 
+        <div class="status-box" style="text-align: right;">
+            <span class="status-title">スコア</span>
+            <span id="score-val" class="status-value">0</span>
+        </div>
+    </header>
+
+    <div class="store-health-container">
+        <span class="status-title">棚キレイ度（ノルマ: 80%以上でクリア）</span>
+        <div class="health-bar-bg">
+            <div class="health-bar-threshold" title="80%ノルマライン"></div>
+            <div id="health-bar" class="health-bar-fill"></div>
+        </div>
     </div>
 
-    <!-- Shelf Display Grid (3x4 Grid = 12 Shelves) -->
-    <div id="shelfGrid" class="w-full grid grid-cols-3 gap-2.5 sm:gap-3 bg-amber-950/40 p-3 rounded-2xl border-4 border-amber-900/60 shadow-2xl shelf-depth relative">
-      <!-- Shelves dynamically created in JS -->
-    </div>
+    <main id="shelf-grid" class="grid-3x3"></main>
 
-  </main>
-
-  <!-- Footer Controls / Tips -->
-  <footer class="w-full max-w-lg mt-3 text-center text-xs text-slate-400 flex flex-col gap-1">
-    <p class="font-medium text-slate-300">💡 奥に引っ込んだ商品をタップして手前にビシッと揃えよう！</p>
-    <p class="text-[10px] text-slate-500">※ 乱れ放置（赤点滅）はキレイ度が激減！迷い客の置いた間違った商品は迅速に撤去！</p>
-  </footer>
-
-  <!-- MODAL: Start Screen -->
-  <div id="startModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border-2 border-emerald-500/60 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-4 animate-bounce-short">
-      <div class="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
-        🏪
-      </div>
-      <div>
-        <span class="bg-emerald-500/20 text-emerald-300 text-xs font-black px-2.5 py-1 rounded-full border border-emerald-500/40">新作アルバイト研修</span>
-        <h2 class="text-2xl font-black text-white mt-2">全開！フェイスアップ</h2>
-        <p class="text-xs text-slate-300 mt-2 leading-relaxed">
-          乱れる商品をタップして素早く【フェイスアップ（前出し）】！<br>
-          キレイ度をキープして激動のシフトを乗り切れ！
+    <div id="start-overlay" class="overlay">
+        <div class="game-title">全開！フェイスアップ</div>
+        <p class="game-desc">
+            <b>【超シビア！プロ店員認定試験】</b><br><br>
+            ① <b>タップ</b>で奥の商品を手前に補充！<br>
+            ② 間違い商品は<b>ドラッグ＆ドロップで正解棚へ！</b><br><br>
+            <span style="color: #ef4444; font-weight: bold;">
+            【クリア条件】20秒経過時にキレイ度80%以上！<br>
+            ・キレイ度0%で即アウト！<br>
+            ・置き間違いはキレイ度−40%の極大損害！
+            </span>
         </p>
-      </div>
-
-      <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700 text-left text-xs text-slate-300 flex flex-col gap-1.5">
-        <div class="flex items-center gap-2">
-          <span class="text-base">✨</span> <span><strong>通常乱れ:</strong> 1タップでキレイに整頓</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-base">🚨</span> <span><strong>放置危険:</strong> 放置すると本部監査メーター急減</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-base">🧃</span> <span><strong>異物放置:</strong> 違う場所の戻し置きは2連タップで撤去</span>
-        </div>
-      </div>
-
-      <button id="startGameBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-lg py-3.5 rounded-2xl shadow-lg transform active:scale-95 transition">
-        シフトに入る (スタート)
-      </button>
+        <button id="start-btn" class="start-btn">勤務開始！</button>
     </div>
-  </div>
 
-  <!-- MODAL: Result & Stage Clear / Game Over Screen -->
-  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-4 relative overflow-hidden">
-      
-      <!-- Result Banner Header -->
-      <div id="resultHeaderBg" class="absolute top-0 left-0 right-0 h-3 bg-emerald-500"></div>
-
-      <div id="resultIcon" class="text-5xl mt-2">
-        🏆
-      </div>
-
-      <div>
-        <h2 id="resultTitle" class="text-2xl font-black text-white">ステージクリア！</h2>
-        <p id="resultSub" class="text-xs text-slate-400 mt-1">本部監査結果報告</p>
-      </div>
-
-      <!-- Rank & Score display -->
-      <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-700 flex flex-col gap-3">
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-slate-400 font-bold">監査ランク</span>
-          <span id="resultRank" class="text-3xl font-black text-yellow-400 neon-text-green">SSS</span>
-        </div>
-        <hr class="border-slate-800">
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">獲得スコア</span>
-          <span id="finalScore" class="font-mono text-base font-bold text-white">0</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">最大コンボ</span>
-          <span id="maxComboDisplay" class="font-mono text-base font-bold text-amber-300">0</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">最終キレイ度</span>
-          <span id="finalCleanliness" class="font-mono text-base font-bold text-emerald-400">100%</span>
-        </div>
-      </div>
-
-      <!-- Evaluation Comment from Store Manager -->
-      <div class="bg-slate-700/50 rounded-xl p-3 text-xs text-left border border-slate-600 flex items-start gap-2">
-        <span class="text-lg">👨‍💼</span>
-        <div class="flex-1">
-          <div class="font-bold text-slate-200">店長からのコメント:</div>
-          <div id="managerComment" class="text-slate-300 text-[11px] mt-0.5 leading-snug">「素晴らしい手際だ！君のおかげで本部から褒められたよ！」</div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex gap-2">
-        <button id="retryBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 rounded-xl border border-slate-500 transition">
-          もう一度
-        </button>
-        <button id="nextStageBtn" class="flex-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-3 px-4 rounded-xl shadow transition">
-          次のシフトへ ➔
-        </button>
-      </div>
-
+    <div id="clear-overlay" class="overlay hidden">
+        <div class="game-title" style="color: #10b981;">STAGE CLEAR!</div>
+        <p id="clear-desc" class="game-desc">素晴らしい判断力です！</p>
+        <button id="next-btn" class="start-btn">次のステージへ！</button>
     </div>
-  </div>
 
+    <div id="gameover-overlay" class="overlay hidden">
+        <div class="game-title" style="color: #ef4444;">店舗崩壊...</div>
+        <p id="gameover-reason" class="game-desc">棚が荒れ果てて店長に怒られてしまいました。</p>
+        <div class="status-box" style="margin-bottom: 24px;">
+            <span class="status-title">到達ステージ</span>
+            <span id="final-stage" class="status-value" style="font-size: 32px; color:#38bdf8;">1</span>
+            <span class="status-title" style="margin-top:10px;">最終スコア</span>
+            <span id="final-score" class="status-value" style="font-size: 36px;">0</span>
+        </div>
+        <button id="retry-btn" class="start-btn">再挑戦！</button>
+    </div>
+</div>
 
-  <script>
-    /* ==========================================
-       Web Audio API Sound Synthesizer
-       ========================================== */
-    class SoundEffects {
-      constructor() {
-        this.ctx = null;
-        this.muted = false;
-      }
-
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
+<script>
+    class SoundEngine {
+        constructor() { this.ctx = null; }
+        init() {
+            try {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            } catch(e) {}
         }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
+        playTap() {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.07);
+            gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.07);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.07);
         }
-      }
-
-      playFacing() { // Crisp snap sound when fixing
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
-        
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.08);
-      }
-
-      playMisplaceClear() { // Trash/wrong item clear sound
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.12);
-
-        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.12);
-      }
-
-      playWarning() { // Alarm when shelf is critical
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-        osc.frequency.setValueAtTime(330, this.ctx.currentTime + 0.05);
-
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
-      }
-
-      playFever() { // Manager shout ability
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.3);
-
-        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
-      }
-
-      playClear() { // Register chime on level clear
-        if (this.muted || !this.ctx) return;
-        const now = this.ctx.currentTime;
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.2, now + idx * 0.08);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + idx * 0.08);
-          osc.stop(now + idx * 0.08 + 0.25);
-        });
-      }
-
-      playGameOver() { // Downward chime on game over
-        if (this.muted || !this.ctx) return;
-        const now = this.ctx.currentTime;
-        [400, 350, 300, 220].forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.25, now + idx * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + idx * 0.1);
-          osc.stop(now + idx * 0.1 + 0.3);
-        });
-      }
+        playFanfare() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                gain.gain.setValueAtTime(0, now + idx * 0.05);
+                gain.gain.linearRampToValueAtTime(0.3, now + idx * 0.05 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.05);
+                osc.stop(now + idx * 0.05 + 0.2);
+            });
+        }
+        playError() {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.25);
+        }
+        playClear() {
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const notes = [523.25, 659.25, 783.99, 987.77, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                gain.gain.setValueAtTime(0.25, now + idx * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.07 + 0.25);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.07);
+                osc.stop(now + idx * 0.07 + 0.25);
+            });
+        }
+        playDamage() {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+        }
     }
 
-    const sfx = new SoundEffects();
-
-    /* ==========================================
-       Game Items Definitions & Presets
-       ========================================== */
-    const PRODUCT_TYPES = [
-      { name: 'ツナマヨおにぎり', icon: '🍙', category: 'おにぎり' },
-      { name: '緑茶ペットボトル', icon: '🍵', category: 'ドリンク' },
-      { name: '幕の内弁当', icon: '🍱', category: 'お弁当' },
-      { name: 'ポテトチップス', icon: '🥔', category: 'スナック' },
-      { name: 'カップラーメン', icon: '🍜', category: '麺類' },
-      { name: 'カフェラテ', icon: '☕', category: 'ドリンク' },
-      { name: 'たまごサンド', icon: '🥪', category: 'パン' },
-      { name: 'エナジードリンク', icon: '⚡', category: 'ドリンク' },
-      { name: 'ソフトクリーム', icon: '🍦', category: 'アイス' }
+    const ALL_PRODUCTS = [
+        { id: 'onigiri', name: 'おにぎり', price: '¥140', icon: `<svg viewBox="0 0 100 100"><polygon points="50,15 15,80 85,80" fill="#2e7d32"/><path d="M 35,50 Q 50,40 65,50 L 70,80 L 30,80 Z" fill="#111"/></svg>` },
+        { id: 'potechi', name: 'ポテチ', price: '¥160', icon: `<svg viewBox="0 0 100 100"><rect x="20" y="15" width="60" height="70" rx="8" fill="#f39c12"/><text x="50" y="60" font-size="18" font-weight="bold" text-anchor="middle" fill="#fff">POTATO</text></svg>` },
+        { id: 'ocha', name: 'お茶', price: '¥130', icon: `<svg viewBox="0 0 100 100"><rect x="30" y="25" width="40" height="60" rx="5" fill="#2ecc71"/><rect x="40" y="10" width="20" height="15" fill="#ef4444"/></svg>` },
+        { id: 'ramen', name: 'カップ麺', price: '¥210', icon: `<svg viewBox="0 0 100 100"><polygon points="20,25 80,25 70,80 30,80" fill="#ef4444"/><ellipse cx="50" cy="25" rx="30" ry="8" fill="#f1c40f"/></svg>` },
+        { id: 'bento', name: '幕の内弁当', price: '¥550', icon: `<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="6" fill="#8e44ad"/><rect x="22" y="32" width="25" height="16" fill="#fff"/><circle cx="34.5" cy="40" r="3" fill="#ef4444"/><rect x="52" y="32" width="26" height="36" fill="#f1c40f"/></svg>` },
+        { id: 'sweets', name: 'パフェ', price: '¥320', icon: `<svg viewBox="0 0 100 100"><polygon points="30,30 70,30 55,80 45,80" fill="#e84393"/><path d="M 25,30 Q 50,10 75,30 Z" fill="#fd79a8"/><circle cx="50" cy="18" r="6" fill="#d63031"/></svg>` }
     ];
 
-    const STAGE_PRESETS = [
-      { stage: 1, name: '平日昼下がり', duration: 30, spawnInterval: 1400, maxDisrupts: 2, misplaceProb: 0.0, speedFactor: 1.0 },
-      { stage: 2, name: '夕方学生ラッシュ', duration: 35, spawnInterval: 1000, maxDisrupts: 3, misplaceProb: 0.15, speedFactor: 1.2 },
-      { stage: 3, name: '深夜酔っ払い来店', duration: 40, spawnInterval: 750, maxDisrupts: 4, misplaceProb: 0.25, speedFactor: 1.5 },
-      { stage: 4, name: '本部監査ワンオペ', duration: 45, spawnInterval: 550, maxDisrupts: 5, misplaceProb: 0.35, speedFactor: 1.8 },
-      { stage: 5, name: 'ブラックフライデー', duration: 50, spawnInterval: 400, maxDisrupts: 6, misplaceProb: 0.45, speedFactor: 2.2 }
-    ];
+    const STAGE_TIME = 20;
 
-    /* ==========================================
-       Game Engine & State
-       ========================================== */
-    class FacingGame {
-      constructor() {
-        this.currentStageIdx = 0;
-        this.score = 0;
-        this.cleanliness = 100;
-        this.combo = 0;
-        this.maxCombo = 0;
-        this.timeLeft = 30;
-        this.feverGauge = 0; // 0 to 100
-        this.isPlaying = false;
-        this.timerId = null;
-        this.disruptLoopId = null;
-        this.decayLoopId = null;
+    const state = {
+        score: 0,
+        stage: 1,
+        timeLeft: STAGE_TIME,
+        storeHealth: 100,
+        isPlaying: false,
+        shelves: [],
+        activeDrag: null,
+        sound: new SoundEngine(),
+        particles: [],
+        availableProducts: []
+    };
 
-        // Shelf grid state (12 slots)
-        this.shelves = Array.from({ length: 12 }, (_, i) => ({
-          id: i,
-          product: PRODUCT_TYPES[i % PRODUCT_TYPES.length],
-          state: 'OK', // 'OK', 'WARNING', 'CRITICAL', 'MISPLACED'
-          misplacedProduct: null,
-          customerAnim: null // customer icon floating
-        }));
+    const gridEl = document.getElementById('shelf-grid');
+    const healthBarEl = document.getElementById('health-bar');
+    const scoreEl = document.getElementById('score-val');
+    const stageEl = document.getElementById('stage-val');
+    const timerEl = document.getElementById('timer-val');
+    const startOverlay = document.getElementById('start-overlay');
+    const clearOverlay = document.getElementById('clear-overlay');
+    const gameoverOverlay = document.getElementById('gameover-overlay');
+    const gameoverReasonEl = document.getElementById('gameover-reason');
+    const startBtn = document.getElementById('start-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const retryBtn = document.getElementById('retry-btn');
+    const finalStageEl = document.getElementById('final-stage');
+    const finalScoreEl = document.getElementById('final-score');
+    const clearDescEl = document.getElementById('clear-desc');
+    const canvas = document.getElementById('fx-canvas');
+    const ctx = canvas.getContext('2d');
 
-        this.initDOM();
-      }
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-      initDOM() {
-        this.shelfGridEl = document.getElementById('shelfGrid');
-        this.cleanGaugeBar = document.getElementById('cleanGaugeBar');
-        this.cleanGaugeText = document.getElementById('cleanGaugeText');
-        this.scoreDisplay = document.getElementById('scoreDisplay');
-        this.timerDisplay = document.getElementById('timerDisplay');
-        this.stageNameDisplay = document.getElementById('stageName');
-        this.comboCounter = document.getElementById('comboCounter');
-        this.feverBtn = document.getElementById('feverBtn');
-        this.feverText = document.getElementById('feverText');
-
-        // Modals & buttons
-        this.startModal = document.getElementById('startModal');
-        this.resultModal = document.getElementById('resultModal');
-        this.startGameBtn = document.getElementById('startGameBtn');
-        this.retryBtn = document.getElementById('retryBtn');
-        this.nextStageBtn = document.getElementById('nextStageBtn');
-        this.soundToggleBtn = document.getElementById('soundToggleBtn');
-
-        // Bind events
-        this.startGameBtn.addEventListener('click', () => {
-          sfx.init();
-          this.startStage(0);
-        });
-
-        this.retryBtn.addEventListener('click', () => {
-          this.startStage(this.currentStageIdx);
-        });
-
-        this.nextStageBtn.addEventListener('click', () => {
-          const nextIdx = (this.currentStageIdx + 1) % STAGE_PRESETS.length;
-          this.startStage(nextIdx);
-        });
-
-        this.feverBtn.addEventListener('click', () => {
-          this.triggerFever();
-        });
-
-        this.soundToggleBtn.addEventListener('click', () => {
-          sfx.init();
-          sfx.muted = !sfx.muted;
-          document.getElementById('soundIcon').textContent = sfx.muted ? '🔇' : '🔊';
-          document.getElementById('soundStatus').textContent = sfx.muted ? 'OFF' : 'ON';
-        });
-
-        this.renderGrid();
-      }
-
-      renderGrid() {
-        this.shelfGridEl.innerHTML = '';
-        this.shelves.forEach((shelf) => {
-          const tile = document.createElement('div');
-          tile.id = `shelf-${shelf.id}`;
-          tile.className = 'relative bg-slate-800/90 rounded-2xl border-2 border-slate-700 h-28 sm:h-32 flex flex-col items-center justify-between p-2 shadow-lg cursor-pointer transform active:scale-95 transition-all overflow-hidden select-none';
-          
-          // Outer overlay for status borders/effects
-          let statusOverlay = '';
-          let productVisual = '';
-
-          if (shelf.state === 'OK') {
-            tile.classList.add('border-slate-600', 'hover:border-slate-500');
-            productVisual = `
-              <div class="flex items-center justify-center gap-0.5 text-2xl sm:text-3xl my-auto transition-all scale-100 opacity-100">
-                <span class="drop-shadow-md">${shelf.product.icon}</span>
-                <span class="drop-shadow-md -ml-3 scale-95 opacity-90">${shelf.product.icon}</span>
-                <span class="drop-shadow-md -ml-3 scale-90 opacity-80">${shelf.product.icon}</span>
-              </div>
-              <div class="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                フェイス完了
-              </div>
-            `;
-          } else if (shelf.state === 'WARNING') {
-            tile.classList.add('border-amber-500', 'bg-amber-950/30');
-            productVisual = `
-              <div class="flex items-center justify-center text-2xl sm:text-3xl my-auto transition-all translate-y-3 opacity-40 blur-[0.5px]">
-                <span class="drop-shadow">${shelf.product.icon}</span>
-              </div>
-              <div class="text-[10px] font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/40 animate-pulse">
-                奥へ退避 (タップ!)
-              </div>
-            `;
-          } else if (shelf.state === 'CRITICAL') {
-            tile.classList.add('border-red-500', 'bg-red-950/50', 'animate-pulse-fast', 'shadow-red-500/20');
-            productVisual = `
-              <div class="flex items-center justify-center text-xl sm:text-2xl my-auto transition-all translate-y-5 opacity-20 filter grayscale">
-                <span>${shelf.product.icon}</span>
-              </div>
-              <div class="text-[10px] font-black text-white bg-red-600 px-2 py-0.5 rounded-full shadow-md animate-bounce">
-                🚨 放置危険! 🚨
-              </div>
-            `;
-          } else if (shelf.state === 'MISPLACED') {
-            tile.classList.add('border-purple-500', 'bg-purple-950/40');
-            productVisual = `
-              <div class="flex items-center justify-center text-3xl my-auto relative">
-                <span class="opacity-30">${shelf.product.icon}</span>
-                <span class="absolute text-4xl animate-bounce drop-shadow-lg">${shelf.misplacedProduct.icon}</span>
-              </div>
-              <div class="text-[10px] font-black text-purple-200 bg-purple-600/80 px-2 py-0.5 rounded-full border border-purple-400">
-                ⛔ 違う商品 (連打!)
-              </div>
-            `;
-          }
-
-          // Customer action banner if customer animation exists
-          let customerTag = '';
-          if (shelf.customerAnim) {
-            customerTag = `
-              <div class="absolute top-1 right-1 text-sm bg-black/60 rounded-full px-1.5 py-0.5 border border-white/20 animate-bounce">
-                ${shelf.customerAnim}
-              </div>
-            `;
-          }
-
-          tile.innerHTML = `
-            <div class="text-[11px] font-bold text-slate-400 truncate max-w-full">
-              ${shelf.product.name}
-            </div>
-            ${productVisual}
-            ${customerTag}
-          `;
-
-          // Handle tap / click on tile
-          tile.addEventListener('click', () => this.handleShelfTap(shelf.id));
-
-          this.shelfGridEl.appendChild(tile);
-        });
-      }
-
-      handleShelfTap(shelfId) {
-        if (!this.isPlaying) return;
-
-        const shelf = this.shelves[shelfId];
-
-        if (shelf.state === 'OK') {
-          // Already clean, slight feedback but no points
-          return;
-        }
-
-        if (shelf.state === 'WARNING' || shelf.state === 'CRITICAL') {
-          const wasCritical = shelf.state === 'CRITICAL';
-          shelf.state = 'OK';
-          shelf.customerAnim = null;
-
-          // Score calculation
-          const pts = wasCritical ? 150 : 100;
-          this.addCombo();
-          this.score += pts * (1 + Math.floor(this.combo / 5) * 0.2);
-          this.cleanliness = Math.min(100, this.cleanliness + (wasCritical ? 4 : 2));
-          this.chargeFever(wasCritical ? 12 : 8);
-
-          sfx.playFacing();
-          this.showTapEffect(shelfId, wasCritical ? 'PERFECT! +150' : '整頓! +100', 'text-emerald-400');
-
-        } else if (shelf.state === 'MISPLACED') {
-          // Requires removing misplaced item
-          shelf.state = 'WARNING'; // returns to misplaced -> needs 1 more tap to face
-          shelf.misplacedProduct = null;
-          shelf.customerAnim = null;
-
-          this.addCombo();
-          this.score += 80;
-          this.chargeFever(10);
-
-          sfx.playMisplaceClear();
-          this.showTapEffect(shelfId, '撤去完了!', 'text-purple-300');
-        }
-
-        this.updateUI();
-        this.renderGrid();
-      }
-
-      showTapEffect(shelfId, text, colorClass) {
-        const tile = document.getElementById(`shelf-${shelfId}`);
-        if (!tile) return;
-
-        const pop = document.createElement('div');
-        pop.className = `absolute inset-0 flex items-center justify-center font-black text-xs sm:text-sm ${colorClass} pointer-events-none animate-bounce z-20 drop-shadow-lg`;
-        pop.textContent = text;
-        tile.appendChild(pop);
-
-        setTimeout(() => pop.remove(), 600);
-      }
-
-      addCombo() {
-        this.combo++;
-        if (this.combo > this.maxCombo) {
-          this.maxCombo = this.combo;
-        }
-
-        this.comboCounter.textContent = `${this.combo} COMBO!`;
-        this.comboCounter.classList.remove('opacity-0', 'scale-75');
-        this.comboCounter.classList.add('opacity-100', 'scale-110');
-
-        clearTimeout(this.comboTimer);
-        this.comboTimer = setTimeout(() => {
-          this.combo = 0;
-          this.comboCounter.classList.add('opacity-0', 'scale-75');
-          this.comboCounter.classList.remove('opacity-100', 'scale-110');
-        }, 2200);
-      }
-
-      chargeFever(amount) {
-        this.feverGauge = Math.min(100, this.feverGauge + amount);
-        if (this.feverGauge >= 100) {
-          this.feverBtn.disabled = false;
-          this.feverBtn.classList.remove('bg-slate-700', 'text-slate-400', 'border-slate-600');
-          this.feverBtn.classList.add('bg-gradient-to-r', 'from-amber-400', 'to-yellow-500', 'text-slate-950', 'border-yellow-300', 'shadow-yellow-500/50', 'animate-pulse');
-          this.feverText.textContent = '店長の一声 (発動可能!)';
+    function setupStageLayout() {
+        if (state.stage >= 3) {
+            gridEl.className = 'grid-4x3';
+            state.availableProducts = ALL_PRODUCTS;
         } else {
-          this.feverText.textContent = `店長の一声 (${Math.floor(this.feverGauge)}%)`;
-        }
-      }
-
-      triggerFever() {
-        if (this.feverGauge < 100 || !this.isPlaying) return;
-
-        this.feverGauge = 0;
-        this.feverBtn.disabled = true;
-        this.feverBtn.classList.add('bg-slate-700', 'text-slate-400', 'border-slate-600');
-        this.feverBtn.classList.remove('bg-gradient-to-r', 'from-amber-400', 'to-yellow-500', 'text-slate-950', 'border-yellow-300', 'shadow-yellow-500/50', 'animate-pulse');
-        this.feverText.textContent = '店長の一声 (0%)';
-
-        sfx.playFever();
-
-        // Fix all shelves immediately
-        this.shelves.forEach(s => {
-          s.state = 'OK';
-          s.misplacedProduct = null;
-          s.customerAnim = null;
-        });
-
-        this.cleanliness = 100;
-        this.score += 1000;
-        this.addCombo();
-
-        // Screen flash effect
-        document.body.classList.add('bg-emerald-900');
-        setTimeout(() => document.body.classList.remove('bg-emerald-900'), 300);
-
-        this.updateUI();
-        this.renderGrid();
-      }
-
-      startStage(stageIdx) {
-        this.currentStageIdx = stageIdx;
-        const preset = STAGE_PRESETS[this.currentStageIdx];
-
-        this.score = 0;
-        this.cleanliness = 100;
-        this.combo = 0;
-        this.maxCombo = 0;
-        this.timeLeft = preset.duration;
-        this.feverGauge = 0;
-        this.isPlaying = true;
-
-        // Reset shelves
-        this.shelves.forEach(s => {
-          s.state = 'OK';
-          s.misplacedProduct = null;
-          s.customerAnim = null;
-        });
-
-        // Hide modals
-        this.startModal.classList.add('hidden');
-        this.resultModal.classList.add('hidden');
-
-        this.stageNameDisplay.textContent = preset.name;
-        this.updateUI();
-        this.renderGrid();
-
-        // Start loops
-        clearInterval(this.timerId);
-        clearInterval(this.disruptLoopId);
-        clearInterval(this.decayLoopId);
-
-        // Timer interval
-        this.timerId = setInterval(() => {
-          this.timeLeft--;
-          this.timerDisplay.textContent = this.timeLeft;
-
-          if (this.timeLeft <= 0) {
-            this.endStage(true);
-          }
-        }, 1000);
-
-        // Customer disruption loop
-        this.disruptLoopId = setInterval(() => {
-          this.spawnDisruption();
-        }, preset.spawnInterval);
-
-        // Cleanliness decay loop
-        this.decayLoopId = setInterval(() => {
-          let decay = 0;
-          this.shelves.forEach(s => {
-            if (s.state === 'WARNING') decay += 0.8;
-            if (s.state === 'CRITICAL') {
-              decay += 2.2;
-              sfx.playWarning();
-            }
-            if (s.state === 'MISPLACED') decay += 1.5;
-          });
-
-          if (decay > 0) {
-            this.cleanliness = Math.max(0, this.cleanliness - decay);
-            this.updateUI();
-
-            if (this.cleanliness <= 0) {
-              this.endStage(false); // Game over by cleanliness depletion
-            }
-          }
-        }, 500);
-      }
-
-      spawnDisruption() {
-        if (!this.isPlaying) return;
-
-        const preset = STAGE_PRESETS[this.currentStageIdx];
-
-        // Find shelves eligible for disruption
-        const eligible = this.shelves.filter(s => s.state === 'OK');
-        if (eligible.length === 0) {
-          // Escalation: Turn WARNING into CRITICAL
-          const warnings = this.shelves.filter(s => s.state === 'WARNING');
-          if (warnings.length > 0) {
-            const target = warnings[Math.floor(Math.random() * warnings.length)];
-            target.state = 'CRITICAL';
-            target.customerAnim = '👿奥から取る客';
-            this.renderGrid();
-          }
-          return;
+            gridEl.className = 'grid-3x3';
+            state.availableProducts = ALL_PRODUCTS.slice(0, 4);
         }
 
-        const target = eligible[Math.floor(Math.random() * eligible.length)];
+        const totalSlots = state.stage >= 3 ? 12 : 9;
+        gridEl.innerHTML = '';
+        state.shelves = [];
 
-        // Decide if it's a misplaced item or normal facing disruption
-        if (Math.random() < preset.misplaceProb) {
-          target.state = 'MISPLACED';
-          // Select a different product
-          const otherProducts = PRODUCT_TYPES.filter(p => p.name !== target.product.name);
-          target.misplacedProduct = otherProducts[Math.floor(Math.random() * otherProducts.length)];
-          target.customerAnim = '🚶放置客';
-        } else {
-          target.state = 'WARNING';
-          target.customerAnim = Math.random() > 0.5 ? '🧒ちびっ子' : '🏃駆け込み';
+        for (let i = 0; i < totalSlots; i++) {
+            const productType = state.availableProducts[i % state.availableProducts.length];
+            const slot = document.createElement('div');
+            slot.className = 'shelf-slot';
+            slot.dataset.index = i;
+
+            const shadow = document.createElement('div');
+            shadow.className = 'shelf-shadow';
+            slot.appendChild(shadow);
+
+            const item = document.createElement('div');
+            item.className = 'product-item';
+            item.innerHTML = productType.icon;
+            slot.appendChild(item);
+
+            const tag = document.createElement('div');
+            tag.className = 'price-tag';
+            tag.textContent = productType.price;
+            slot.appendChild(tag);
+
+            const warning = document.createElement('div');
+            warning.className = 'warning-border';
+            warning.style.display = 'none';
+            slot.appendChild(warning);
+
+            slot.addEventListener('pointerdown', (e) => {
+                if (e.target.classList.contains('misplaced-item')) return;
+                onShelfTap(i);
+            });
+
+            gridEl.appendChild(slot);
+
+            state.shelves.push({
+                element: slot,
+                productType: productType,
+                cleanliness: 100,
+                misplacedProduct: null,
+                misplacedElement: null,
+                customerBubble: null,
+                warningElement: warning
+            });
         }
-
-        this.renderGrid();
-      }
-
-      updateUI() {
-        this.cleanGaugeText.textContent = `${Math.floor(this.cleanliness)}%`;
-        this.cleanGaugeBar.style.width = `${Math.max(0, Math.min(100, this.cleanliness))}%`;
-
-        // Bar colors depending on level
-        if (this.cleanliness > 60) {
-          this.cleanGaugeBar.className = 'bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-200';
-        } else if (this.cleanliness > 30) {
-          this.cleanGaugeBar.className = 'bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full transition-all duration-200';
-        } else {
-          this.cleanGaugeBar.className = 'bg-gradient-to-r from-red-600 to-rose-500 h-full rounded-full transition-all duration-200 animate-pulse';
-        }
-
-        this.scoreDisplay.textContent = Math.floor(this.score);
-      }
-
-      endStage(timeUp) {
-        this.isPlaying = false;
-        clearInterval(this.timerId);
-        clearInterval(this.disruptLoopId);
-        clearInterval(this.decayLoopId);
-
-        const isSuccess = timeUp && this.cleanliness >= 50;
-
-        document.getElementById('finalScore').textContent = Math.floor(this.score);
-        document.getElementById('maxComboDisplay').textContent = `${this.maxCombo} 回`;
-        document.getElementById('finalCleanliness').textContent = `${Math.floor(this.cleanliness)}%`;
-
-        const resultTitle = document.getElementById('resultTitle');
-        const resultIcon = document.getElementById('resultIcon');
-        const resultRank = document.getElementById('resultRank');
-        const managerComment = document.getElementById('managerComment');
-        const headerBg = document.getElementById('resultHeaderBg');
-
-        if (isSuccess) {
-          sfx.playClear();
-          resultTitle.textContent = 'シフト完了！ (合格)';
-          resultIcon.textContent = '🏅';
-          headerBg.className = 'absolute top-0 left-0 right-0 h-3 bg-emerald-500';
-
-          // Rank calculation
-          let rank = 'A';
-          let comment = '「しっかりとフェイスアップできているな！助かるよ！」';
-
-          if (this.cleanliness >= 90 && this.maxCombo >= 10) {
-            rank = 'SSS';
-            comment = '「神がかった手際だ！本部感謝状レベルの完璧な棚作成者だな！」';
-          } else if (this.cleanliness >= 80) {
-            rank = 'S';
-            comment = '「文句なしの綺麗さだ！この調子で次の時間帯も頼むぞ！」';
-          } else if (this.cleanliness >= 60) {
-            rank = 'B';
-            comment = '「よし、なんとか本部監査をパスできた。次はもう少し奥も気にしよう！」';
-          }
-
-          resultRank.textContent = rank;
-          managerComment.textContent = comment;
-          this.nextStageBtn.classList.remove('hidden');
-
-        } else {
-          sfx.playGameOver();
-          resultTitle.textContent = '店長からの呼び出し (失敗)';
-          resultIcon.textContent = '😱';
-          headerBg.className = 'absolute top-0 left-0 right-0 h-3 bg-red-600';
-
-          resultRank.textContent = 'F';
-          resultRank.className = 'text-3xl font-black text-red-500 neon-text-red';
-          managerComment.textContent = '「ねえ、棚見た…？ガタガタじゃないか！本部監査員が頭抱えて帰っちゃったよ…」';
-
-          this.nextStageBtn.classList.add('hidden');
-        }
-
-        this.resultModal.classList.remove('hidden');
-      }
     }
 
-    // Initialize Game on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      window.game = new FacingGame();
+    function spawnMisplacedItem(slotIndex) {
+        const shelf = state.shelves[slotIndex];
+        if (shelf.misplacedProduct) return;
+
+        const otherProducts = state.availableProducts.filter(p => p.id !== shelf.productType.id);
+        const wrongProduct = otherProducts[Math.floor(Math.random() * otherProducts.length)];
+
+        const misEl = document.createElement('div');
+        misEl.className = 'misplaced-item';
+        misEl.innerHTML = wrongProduct.icon;
+
+        misEl.addEventListener('pointerdown', (e) => startDrag(e, slotIndex, wrongProduct));
+
+        shelf.element.appendChild(misEl);
+        shelf.misplacedProduct = wrongProduct;
+        shelf.misplacedElement = misEl;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'customer-bubble';
+        bubble.textContent = 'ココに置こ';
+        shelf.element.appendChild(bubble);
+        shelf.customerBubble = bubble;
+    }
+
+    function startDrag(e, sourceSlotIndex, product) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const misEl = state.shelves[sourceSlotIndex].misplacedElement;
+        if (!misEl) return;
+
+        misEl.classList.add('dragging');
+        document.body.appendChild(misEl);
+
+        state.activeDrag = {
+            element: misEl,
+            sourceIndex: sourceSlotIndex,
+            product: product
+        };
+
+        moveDrag(e);
+        window.addEventListener('pointermove', moveDrag);
+        window.addEventListener('pointerup', endDrag);
+    }
+
+    function moveDrag(e) {
+        if (!state.activeDrag) return;
+        const el = state.activeDrag.element;
+        el.style.left = `${e.clientX}px`;
+        el.style.top = `${e.clientY}px`;
+    }
+
+    function endDrag(e) {
+        if (!state.activeDrag) return;
+        window.removeEventListener('pointermove', moveDrag);
+        window.removeEventListener('pointerup', endDrag);
+
+        const { element, sourceIndex, product } = state.activeDrag;
+        element.style.display = 'none';
+
+        const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+        const targetSlot = dropTarget ? dropTarget.closest('.shelf-slot') : null;
+
+        if (targetSlot) {
+            const targetIndex = parseInt(targetSlot.dataset.index);
+            const targetShelf = state.shelves[targetIndex];
+
+            const rect = targetSlot.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            if (targetShelf.productType.id === product.id) {
+                // 正解棚
+                state.sound.playFanfare();
+                state.score += 200;
+
+                targetShelf.cleanliness = 100;
+                targetShelf.element.classList.remove('receded');
+                targetShelf.element.classList.add('pull-forward');
+                setTimeout(() => targetShelf.element.classList.remove('pull-forward'), 200);
+
+                spawnParticles(centerX, centerY);
+                showFloatingText(centerX, centerY, 'PERFECT! +200', false);
+
+                const srcShelf = state.shelves[sourceIndex];
+                if (srcShelf.customerBubble) {
+                    srcShelf.customerBubble.remove();
+                    srcShelf.customerBubble = null;
+                }
+                srcShelf.misplacedProduct = null;
+                element.remove();
+            } else {
+                // 間違った棚へ誤ドロップ：一気に大幅削りペナルティ
+                state.sound.playError();
+                state.score = Math.max(0, state.score - 200);
+
+                // 対象棚・元棚の綺麗度を超大幅削減（合計キレイ度に直接激痛）
+                targetShelf.cleanliness = Math.max(0, targetShelf.cleanliness - 50);
+                state.shelves[sourceIndex].cleanliness = Math.max(0, state.shelves[sourceIndex].cleanliness - 30);
+
+                showFloatingText(centerX, centerY, 'MISPLACED! -200', true);
+                returnToSource(sourceIndex, element);
+            }
+        } else {
+            returnToSource(sourceIndex, element);
+        }
+
+        state.activeDrag = null;
+        updateUI();
+    }
+
+    function returnToSource(sourceIndex, element) {
+        element.classList.remove('dragging');
+        element.style.display = 'block';
+        element.style.position = '';
+        element.style.left = '';
+        element.style.top = '';
+        state.shelves[sourceIndex].element.appendChild(element);
+    }
+
+    function spawnParticles(x, y) {
+        const colors = ['#fbbf24', '#10b981', '#ef4444', '#38bdf8', '#a855f7', '#ffffff'];
+        for (let i = 0; i < 40; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 9 + 4;
+            state.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 8 + 3,
+                alpha: 1,
+                decay: Math.random() * 0.025 + 0.02
+            });
+        }
+    }
+
+    function showFloatingText(x, y, text, isPenalty) {
+        const el = document.createElement('div');
+        el.className = `floating-score ${isPenalty ? 'penalty' : ''}`;
+        el.textContent = text;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 700);
+    }
+
+    function onShelfTap(index) {
+        if (!state.isPlaying) return;
+        const shelf = state.shelves[index];
+
+        if (shelf.cleanliness >= 95) return;
+
+        state.sound.playTap();
+        shelf.cleanliness = 100;
+        shelf.element.classList.remove('receded');
+        shelf.element.classList.add('pull-forward');
+
+        setTimeout(() => shelf.element.classList.remove('pull-forward'), 200);
+
+        state.score += 15;
+        updateUI();
+    }
+
+    function gameLoop() {
+        if (!state.isPlaying) return;
+
+        state.timeLeft -= 0.1;
+
+        // タイムアップ判定（ノルマ80%チェック）
+        if (state.timeLeft <= 0) {
+            state.timeLeft = 0;
+            if (state.storeHealth < 80) {
+                gameOver("20秒経過時点で棚キレイ度が80%未満だったため不合格です！");
+            } else {
+                stageClear();
+            }
+            return;
+        }
+
+        let totalCleanliness = 0;
+
+        // STAGE 1から高速化・激甚化
+        const decayMultiplier = 0.65 + (state.stage * 0.25);
+        const spawnChance = 0.06 + (state.stage * 0.035);
+
+        if (Math.random() < spawnChance) {
+            const randomIndex = Math.floor(Math.random() * state.shelves.length);
+            spawnMisplacedItem(randomIndex);
+        }
+
+        state.shelves.forEach(shelf => {
+            // 放置アイテムがある棚は劣化スピード1.8倍
+            let penalty = shelf.misplacedProduct ? 1.5 : 0;
+            shelf.cleanliness = Math.max(0, shelf.cleanliness - (Math.random() * decayMultiplier + penalty));
+            totalCleanliness += shelf.cleanliness;
+
+            if (shelf.cleanliness < 70) shelf.element.classList.add('receded');
+            else shelf.element.classList.remove('receded');
+
+            if (shelf.cleanliness < 40 || shelf.misplacedProduct) {
+                shelf.warningElement.style.display = 'block';
+            } else {
+                shelf.warningElement.style.display = 'none';
+            }
+        });
+
+        state.storeHealth = totalCleanliness / state.shelves.length;
+
+        // キレイ度0%で即アウト判定
+        if (state.storeHealth <= 0) {
+            gameOver("棚キレイ度が完全に底を突き、店舗が壊滅しました！");
+        }
+
+        updateFX();
+        updateUI();
+    }
+
+    function updateFX() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+            const p = state.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.25;
+            p.alpha -= p.decay;
+
+            if (p.alpha <= 0) {
+                state.particles.splice(i, 1);
+                continue;
+            }
+
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function updateUI() {
+        scoreEl.textContent = Math.floor(state.score);
+        stageEl.textContent = state.stage;
+        timerEl.textContent = `${Math.ceil(state.timeLeft)}s`;
+        healthBarEl.style.width = `${state.storeHealth}%`;
+
+        if (state.storeHealth < 80) {
+            healthBarEl.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else {
+            healthBarEl.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+        }
+    }
+
+    function startStage() {
+        state.sound.init();
+        state.timeLeft = STAGE_TIME;
+        state.storeHealth = 100;
+        state.isPlaying = true;
+
+        startOverlay.classList.add('hidden');
+        clearOverlay.classList.add('hidden');
+        gameoverOverlay.classList.add('hidden');
+
+        setupStageLayout();
+        updateUI();
+
+        if (state.loopTimer) clearInterval(state.loopTimer);
+        state.loopTimer = setInterval(gameLoop, 100);
+    }
+
+    function stageClear() {
+        state.isPlaying = false;
+        clearInterval(state.loopTimer);
+        state.sound.playClear();
+
+        if (state.stage === 2) {
+            clearDescEl.innerHTML = `STAGE 2 クリア！<br><span style="color:#ef4444; font-weight:bold;">【警告】次から12棚に拡大！ノルマ80%維持は至難の業です！</span>`;
+        } else if (state.stage >= 4) {
+            clearDescEl.innerHTML = `STAGE ${state.stage} クリア！<br><b>神領域！奇跡のプロ店員です！</b>`;
+        } else {
+            clearDescEl.textContent = `ノルマ達成分！STAGE ${state.stage} クリア！`;
+        }
+
+        clearOverlay.classList.remove('hidden');
+    }
+
+    function nextStage() {
+        state.stage++;
+        startStage();
+    }
+
+    function gameOver(reason) {
+        state.isPlaying = false;
+        clearInterval(state.loopTimer);
+        state.sound.playDamage();
+
+        gameoverReasonEl.textContent = reason || "棚が荒れ果てて店長に怒られてしまいました。";
+        finalStageEl.textContent = state.stage;
+        finalScoreEl.textContent = Math.floor(state.score);
+        gameoverOverlay.classList.remove('hidden');
+    }
+
+    startBtn.addEventListener('click', () => {
+        state.score = 0;
+        state.stage = 1;
+        startStage();
     });
-  </script>
+    nextBtn.addEventListener('click', nextStage);
+    retryBtn.addEventListener('click', () => {
+        state.score = 0;
+        state.stage = 1;
+        startStage();
+    });
+
+    setupStageLayout();
+</script>
 </body>
 </html>
