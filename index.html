@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>全開！フェイスアップ・マスター | コンビニ棚整頓ゲーム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            rounded: ['"M PLUS Rounded 1c"', 'sans-serif'],
+          },
+          animation: {
+            'bounce-short': 'bounceShort 0.3s ease-in-out',
+            'shake': 'shake 0.4s ease-in-out',
+            'pulse-fast': 'pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(0.92)' },
+            },
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-6px)' },
+              '40%, 80%': { transform: 'translateX(6px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .shelf-depth {
+      box-shadow: inset 0 8px 12px -2px rgba(0, 0, 0, 0.5), inset 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    .neon-text-green {
+      text-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+    }
+    .neon-text-red {
+      text-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
+    }
+    /* Custom Scrollbar for rankings or stats if needed */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 overflow-x-hidden">
+
+  <!-- Top Bar / Header -->
+  <header class="w-full max-w-lg flex items-center justify-between bg-slate-800/90 border-2 border-emerald-500/50 rounded-2xl p-3 shadow-lg backdrop-blur-md mb-2">
+    <div class="flex items-center gap-2">
+      <div class="bg-emerald-500 text-slate-950 font-black text-xs px-2 py-1 rounded-md tracking-wider">7-ELEVEN風</div>
+      <h1 class="text-sm sm:text-base font-black text-emerald-400 tracking-tight">フェイスアップ★マスター</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="soundToggleBtn" class="bg-slate-700 hover:bg-slate-600 text-xs px-2.5 py-1.5 rounded-lg border border-slate-500 flex items-center gap-1 transition">
+        <span id="soundIcon">🔊</span> <span id="soundStatus" class="hidden sm:inline">ON</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="w-full max-w-lg flex flex-col items-center flex-1 justify-center relative">
+
+    <!-- Status Dashboard -->
+    <div id="dashboard" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-3 shadow-xl mb-3 flex flex-col gap-2 relative overflow-hidden">
+      
+      <!-- Top Row: Stage & Timer & Score -->
+      <div class="flex justify-between items-center text-xs sm:text-sm font-bold">
+        <div class="bg-slate-700/80 border border-slate-600 px-2.5 py-1 rounded-lg text-emerald-300 flex items-center gap-1">
+          <span>シフト:</span>
+          <span id="stageName" class="text-white">---</span>
+        </div>
+        <div class="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-3 py-1 rounded-lg text-amber-300">
+          <span>⏱️ 残り:</span>
+          <span id="timerDisplay" class="text-lg font-black font-mono text-amber-400">30</span><span class="text-xs">秒</span>
+        </div>
+        <div class="bg-slate-700/80 border border-slate-600 px-2.5 py-1 rounded-lg text-cyan-300">
+          <span>SCORE:</span>
+          <span id="scoreDisplay" class="text-white font-mono font-bold text-base">0</span>
+        </div>
+      </div>
+
+      <!-- Cleanliness Bar (本部監査メーター) -->
+      <div>
+        <div class="flex justify-between items-center text-xs font-black mb-1">
+          <span class="text-slate-300 flex items-center gap-1">
+            <span>🏪 店内キレイ度 (本部監査度)</span>
+          </span>
+          <span id="cleanGaugeText" class="text-emerald-400 font-mono text-sm">100%</span>
+        </div>
+        <div class="w-full bg-slate-900 rounded-full h-4 p-0.5 border border-slate-700 relative overflow-hidden shadow-inner">
+          <div id="cleanGaugeBar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-200 w-full"></div>
+        </div>
+      </div>
+
+      <!-- Combo & Fever Bar Row -->
+      <div class="flex justify-between items-center gap-2 text-xs font-bold pt-1">
+        <!-- Combo Display -->
+        <div class="flex items-center gap-1 min-w-[100px]">
+          <span id="comboCounter" class="text-xl font-black italic text-yellow-400 opacity-0 transition-all scale-75">
+            0 <span class="text-xs not-italic">COMBO!</span>
+          </span>
+        </div>
+
+        <!-- Manager Fever Button -->
+        <button id="feverBtn" disabled class="flex-1 bg-slate-700 text-slate-400 font-black py-1.5 px-3 rounded-xl border border-slate-600 shadow transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="text-base">📢</span>
+          <span id="feverText">店長の一声 (0%)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Shelf Display Grid (3x4 Grid = 12 Shelves) -->
+    <div id="shelfGrid" class="w-full grid grid-cols-3 gap-2.5 sm:gap-3 bg-amber-950/40 p-3 rounded-2xl border-4 border-amber-900/60 shadow-2xl shelf-depth relative">
+      <!-- Shelves dynamically created in JS -->
+    </div>
+
+  </main>
+
+  <!-- Footer Controls / Tips -->
+  <footer class="w-full max-w-lg mt-3 text-center text-xs text-slate-400 flex flex-col gap-1">
+    <p class="font-medium text-slate-300">💡 奥に引っ込んだ商品をタップして手前にビシッと揃えよう！</p>
+    <p class="text-[10px] text-slate-500">※ 乱れ放置（赤点滅）はキレイ度が激減！迷い客の置いた間違った商品は迅速に撤去！</p>
+  </footer>
+
+  <!-- MODAL: Start Screen -->
+  <div id="startModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border-2 border-emerald-500/60 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-4 animate-bounce-short">
+      <div class="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
+        🏪
+      </div>
+      <div>
+        <span class="bg-emerald-500/20 text-emerald-300 text-xs font-black px-2.5 py-1 rounded-full border border-emerald-500/40">新作アルバイト研修</span>
+        <h2 class="text-2xl font-black text-white mt-2">全開！フェイスアップ</h2>
+        <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+          乱れる商品をタップして素早く【フェイスアップ（前出し）】！<br>
+          キレイ度をキープして激動のシフトを乗り切れ！
+        </p>
+      </div>
+
+      <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700 text-left text-xs text-slate-300 flex flex-col gap-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-base">✨</span> <span><strong>通常乱れ:</strong> 1タップでキレイに整頓</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-base">🚨</span> <span><strong>放置危険:</strong> 放置すると本部監査メーター急減</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-base">🧃</span> <span><strong>異物放置:</strong> 違う場所の戻し置きは2連タップで撤去</span>
+        </div>
+      </div>
+
+      <button id="startGameBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-lg py-3.5 rounded-2xl shadow-lg transform active:scale-95 transition">
+        シフトに入る (スタート)
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: Result & Stage Clear / Game Over Screen -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-4 relative overflow-hidden">
+      
+      <!-- Result Banner Header -->
+      <div id="resultHeaderBg" class="absolute top-0 left-0 right-0 h-3 bg-emerald-500"></div>
+
+      <div id="resultIcon" class="text-5xl mt-2">
+        🏆
+      </div>
+
+      <div>
+        <h2 id="resultTitle" class="text-2xl font-black text-white">ステージクリア！</h2>
+        <p id="resultSub" class="text-xs text-slate-400 mt-1">本部監査結果報告</p>
+      </div>
+
+      <!-- Rank & Score display -->
+      <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-700 flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-slate-400 font-bold">監査ランク</span>
+          <span id="resultRank" class="text-3xl font-black text-yellow-400 neon-text-green">SSS</span>
+        </div>
+        <hr class="border-slate-800">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">獲得スコア</span>
+          <span id="finalScore" class="font-mono text-base font-bold text-white">0</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">最大コンボ</span>
+          <span id="maxComboDisplay" class="font-mono text-base font-bold text-amber-300">0</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">最終キレイ度</span>
+          <span id="finalCleanliness" class="font-mono text-base font-bold text-emerald-400">100%</span>
+        </div>
+      </div>
+
+      <!-- Evaluation Comment from Store Manager -->
+      <div class="bg-slate-700/50 rounded-xl p-3 text-xs text-left border border-slate-600 flex items-start gap-2">
+        <span class="text-lg">👨‍💼</span>
+        <div class="flex-1">
+          <div class="font-bold text-slate-200">店長からのコメント:</div>
+          <div id="managerComment" class="text-slate-300 text-[11px] mt-0.5 leading-snug">「素晴らしい手際だ！君のおかげで本部から褒められたよ！」</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2">
+        <button id="retryBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 rounded-xl border border-slate-500 transition">
+          もう一度
+        </button>
+        <button id="nextStageBtn" class="flex-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-3 px-4 rounded-xl shadow transition">
+          次のシフトへ ➔
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script>
+    /* ==========================================
+       Web Audio API Sound Synthesizer
+       ========================================== */
+    class SoundEffects {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playFacing() { // Crisp snap sound when fixing
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+        
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+
+      playMisplaceClear() { // Trash/wrong item clear sound
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.12);
+      }
+
+      playWarning() { // Alarm when shelf is critical
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(330, this.ctx.currentTime + 0.05);
+
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      }
+
+      playFever() { // Manager shout ability
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.3);
+
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
+      }
+
+      playClear() { // Register chime on level clear
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.25);
+        });
+      }
+
+      playGameOver() { // Downward chime on game over
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [400, 350, 300, 220].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.25, now + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.1);
+          osc.stop(now + idx * 0.1 + 0.3);
+        });
+      }
+    }
+
+    const sfx = new SoundEffects();
+
+    /* ==========================================
+       Game Items Definitions & Presets
+       ========================================== */
+    const PRODUCT_TYPES = [
+      { name: 'ツナマヨおにぎり', icon: '🍙', category: 'おにぎり' },
+      { name: '緑茶ペットボトル', icon: '🍵', category: 'ドリンク' },
+      { name: '幕の内弁当', icon: '🍱', category: 'お弁当' },
+      { name: 'ポテトチップス', icon: '🥔', category: 'スナック' },
+      { name: 'カップラーメン', icon: '🍜', category: '麺類' },
+      { name: 'カフェラテ', icon: '☕', category: 'ドリンク' },
+      { name: 'たまごサンド', icon: '🥪', category: 'パン' },
+      { name: 'エナジードリンク', icon: '⚡', category: 'ドリンク' },
+      { name: 'ソフトクリーム', icon: '🍦', category: 'アイス' }
+    ];
+
+    const STAGE_PRESETS = [
+      { stage: 1, name: '平日昼下がり', duration: 30, spawnInterval: 1400, maxDisrupts: 2, misplaceProb: 0.0, speedFactor: 1.0 },
+      { stage: 2, name: '夕方学生ラッシュ', duration: 35, spawnInterval: 1000, maxDisrupts: 3, misplaceProb: 0.15, speedFactor: 1.2 },
+      { stage: 3, name: '深夜酔っ払い来店', duration: 40, spawnInterval: 750, maxDisrupts: 4, misplaceProb: 0.25, speedFactor: 1.5 },
+      { stage: 4, name: '本部監査ワンオペ', duration: 45, spawnInterval: 550, maxDisrupts: 5, misplaceProb: 0.35, speedFactor: 1.8 },
+      { stage: 5, name: 'ブラックフライデー', duration: 50, spawnInterval: 400, maxDisrupts: 6, misplaceProb: 0.45, speedFactor: 2.2 }
+    ];
+
+    /* ==========================================
+       Game Engine & State
+       ========================================== */
+    class FacingGame {
+      constructor() {
+        this.currentStageIdx = 0;
+        this.score = 0;
+        this.cleanliness = 100;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.timeLeft = 30;
+        this.feverGauge = 0; // 0 to 100
+        this.isPlaying = false;
+        this.timerId = null;
+        this.disruptLoopId = null;
+        this.decayLoopId = null;
+
+        // Shelf grid state (12 slots)
+        this.shelves = Array.from({ length: 12 }, (_, i) => ({
+          id: i,
+          product: PRODUCT_TYPES[i % PRODUCT_TYPES.length],
+          state: 'OK', // 'OK', 'WARNING', 'CRITICAL', 'MISPLACED'
+          misplacedProduct: null,
+          customerAnim: null // customer icon floating
+        }));
+
+        this.initDOM();
+      }
+
+      initDOM() {
+        this.shelfGridEl = document.getElementById('shelfGrid');
+        this.cleanGaugeBar = document.getElementById('cleanGaugeBar');
+        this.cleanGaugeText = document.getElementById('cleanGaugeText');
+        this.scoreDisplay = document.getElementById('scoreDisplay');
+        this.timerDisplay = document.getElementById('timerDisplay');
+        this.stageNameDisplay = document.getElementById('stageName');
+        this.comboCounter = document.getElementById('comboCounter');
+        this.feverBtn = document.getElementById('feverBtn');
+        this.feverText = document.getElementById('feverText');
+
+        // Modals & buttons
+        this.startModal = document.getElementById('startModal');
+        this.resultModal = document.getElementById('resultModal');
+        this.startGameBtn = document.getElementById('startGameBtn');
+        this.retryBtn = document.getElementById('retryBtn');
+        this.nextStageBtn = document.getElementById('nextStageBtn');
+        this.soundToggleBtn = document.getElementById('soundToggleBtn');
+
+        // Bind events
+        this.startGameBtn.addEventListener('click', () => {
+          sfx.init();
+          this.startStage(0);
+        });
+
+        this.retryBtn.addEventListener('click', () => {
+          this.startStage(this.currentStageIdx);
+        });
+
+        this.nextStageBtn.addEventListener('click', () => {
+          const nextIdx = (this.currentStageIdx + 1) % STAGE_PRESETS.length;
+          this.startStage(nextIdx);
+        });
+
+        this.feverBtn.addEventListener('click', () => {
+          this.triggerFever();
+        });
+
+        this.soundToggleBtn.addEventListener('click', () => {
+          sfx.init();
+          sfx.muted = !sfx.muted;
+          document.getElementById('soundIcon').textContent = sfx.muted ? '🔇' : '🔊';
+          document.getElementById('soundStatus').textContent = sfx.muted ? 'OFF' : 'ON';
+        });
+
+        this.renderGrid();
+      }
+
+      renderGrid() {
+        this.shelfGridEl.innerHTML = '';
+        this.shelves.forEach((shelf) => {
+          const tile = document.createElement('div');
+          tile.id = `shelf-${shelf.id}`;
+          tile.className = 'relative bg-slate-800/90 rounded-2xl border-2 border-slate-700 h-28 sm:h-32 flex flex-col items-center justify-between p-2 shadow-lg cursor-pointer transform active:scale-95 transition-all overflow-hidden select-none';
+          
+          // Outer overlay for status borders/effects
+          let statusOverlay = '';
+          let productVisual = '';
+
+          if (shelf.state === 'OK') {
+            tile.classList.add('border-slate-600', 'hover:border-slate-500');
+            productVisual = `
+              <div class="flex items-center justify-center gap-0.5 text-2xl sm:text-3xl my-auto transition-all scale-100 opacity-100">
+                <span class="drop-shadow-md">${shelf.product.icon}</span>
+                <span class="drop-shadow-md -ml-3 scale-95 opacity-90">${shelf.product.icon}</span>
+                <span class="drop-shadow-md -ml-3 scale-90 opacity-80">${shelf.product.icon}</span>
+              </div>
+              <div class="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                フェイス完了
+              </div>
+            `;
+          } else if (shelf.state === 'WARNING') {
+            tile.classList.add('border-amber-500', 'bg-amber-950/30');
+            productVisual = `
+              <div class="flex items-center justify-center text-2xl sm:text-3xl my-auto transition-all translate-y-3 opacity-40 blur-[0.5px]">
+                <span class="drop-shadow">${shelf.product.icon}</span>
+              </div>
+              <div class="text-[10px] font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/40 animate-pulse">
+                奥へ退避 (タップ!)
+              </div>
+            `;
+          } else if (shelf.state === 'CRITICAL') {
+            tile.classList.add('border-red-500', 'bg-red-950/50', 'animate-pulse-fast', 'shadow-red-500/20');
+            productVisual = `
+              <div class="flex items-center justify-center text-xl sm:text-2xl my-auto transition-all translate-y-5 opacity-20 filter grayscale">
+                <span>${shelf.product.icon}</span>
+              </div>
+              <div class="text-[10px] font-black text-white bg-red-600 px-2 py-0.5 rounded-full shadow-md animate-bounce">
+                🚨 放置危険! 🚨
+              </div>
+            `;
+          } else if (shelf.state === 'MISPLACED') {
+            tile.classList.add('border-purple-500', 'bg-purple-950/40');
+            productVisual = `
+              <div class="flex items-center justify-center text-3xl my-auto relative">
+                <span class="opacity-30">${shelf.product.icon}</span>
+                <span class="absolute text-4xl animate-bounce drop-shadow-lg">${shelf.misplacedProduct.icon}</span>
+              </div>
+              <div class="text-[10px] font-black text-purple-200 bg-purple-600/80 px-2 py-0.5 rounded-full border border-purple-400">
+                ⛔ 違う商品 (連打!)
+              </div>
+            `;
+          }
+
+          // Customer action banner if customer animation exists
+          let customerTag = '';
+          if (shelf.customerAnim) {
+            customerTag = `
+              <div class="absolute top-1 right-1 text-sm bg-black/60 rounded-full px-1.5 py-0.5 border border-white/20 animate-bounce">
+                ${shelf.customerAnim}
+              </div>
+            `;
+          }
+
+          tile.innerHTML = `
+            <div class="text-[11px] font-bold text-slate-400 truncate max-w-full">
+              ${shelf.product.name}
+            </div>
+            ${productVisual}
+            ${customerTag}
+          `;
+
+          // Handle tap / click on tile
+          tile.addEventListener('click', () => this.handleShelfTap(shelf.id));
+
+          this.shelfGridEl.appendChild(tile);
+        });
+      }
+
+      handleShelfTap(shelfId) {
+        if (!this.isPlaying) return;
+
+        const shelf = this.shelves[shelfId];
+
+        if (shelf.state === 'OK') {
+          // Already clean, slight feedback but no points
+          return;
+        }
+
+        if (shelf.state === 'WARNING' || shelf.state === 'CRITICAL') {
+          const wasCritical = shelf.state === 'CRITICAL';
+          shelf.state = 'OK';
+          shelf.customerAnim = null;
+
+          // Score calculation
+          const pts = wasCritical ? 150 : 100;
+          this.addCombo();
+          this.score += pts * (1 + Math.floor(this.combo / 5) * 0.2);
+          this.cleanliness = Math.min(100, this.cleanliness + (wasCritical ? 4 : 2));
+          this.chargeFever(wasCritical ? 12 : 8);
+
+          sfx.playFacing();
+          this.showTapEffect(shelfId, wasCritical ? 'PERFECT! +150' : '整頓! +100', 'text-emerald-400');
+
+        } else if (shelf.state === 'MISPLACED') {
+          // Requires removing misplaced item
+          shelf.state = 'WARNING'; // returns to misplaced -> needs 1 more tap to face
+          shelf.misplacedProduct = null;
+          shelf.customerAnim = null;
+
+          this.addCombo();
+          this.score += 80;
+          this.chargeFever(10);
+
+          sfx.playMisplaceClear();
+          this.showTapEffect(shelfId, '撤去完了!', 'text-purple-300');
+        }
+
+        this.updateUI();
+        this.renderGrid();
+      }
+
+      showTapEffect(shelfId, text, colorClass) {
+        const tile = document.getElementById(`shelf-${shelfId}`);
+        if (!tile) return;
+
+        const pop = document.createElement('div');
+        pop.className = `absolute inset-0 flex items-center justify-center font-black text-xs sm:text-sm ${colorClass} pointer-events-none animate-bounce z-20 drop-shadow-lg`;
+        pop.textContent = text;
+        tile.appendChild(pop);
+
+        setTimeout(() => pop.remove(), 600);
+      }
+
+      addCombo() {
+        this.combo++;
+        if (this.combo > this.maxCombo) {
+          this.maxCombo = this.combo;
+        }
+
+        this.comboCounter.textContent = `${this.combo} COMBO!`;
+        this.comboCounter.classList.remove('opacity-0', 'scale-75');
+        this.comboCounter.classList.add('opacity-100', 'scale-110');
+
+        clearTimeout(this.comboTimer);
+        this.comboTimer = setTimeout(() => {
+          this.combo = 0;
+          this.comboCounter.classList.add('opacity-0', 'scale-75');
+          this.comboCounter.classList.remove('opacity-100', 'scale-110');
+        }, 2200);
+      }
+
+      chargeFever(amount) {
+        this.feverGauge = Math.min(100, this.feverGauge + amount);
+        if (this.feverGauge >= 100) {
+          this.feverBtn.disabled = false;
+          this.feverBtn.classList.remove('bg-slate-700', 'text-slate-400', 'border-slate-600');
+          this.feverBtn.classList.add('bg-gradient-to-r', 'from-amber-400', 'to-yellow-500', 'text-slate-950', 'border-yellow-300', 'shadow-yellow-500/50', 'animate-pulse');
+          this.feverText.textContent = '店長の一声 (発動可能!)';
+        } else {
+          this.feverText.textContent = `店長の一声 (${Math.floor(this.feverGauge)}%)`;
+        }
+      }
+
+      triggerFever() {
+        if (this.feverGauge < 100 || !this.isPlaying) return;
+
+        this.feverGauge = 0;
+        this.feverBtn.disabled = true;
+        this.feverBtn.classList.add('bg-slate-700', 'text-slate-400', 'border-slate-600');
+        this.feverBtn.classList.remove('bg-gradient-to-r', 'from-amber-400', 'to-yellow-500', 'text-slate-950', 'border-yellow-300', 'shadow-yellow-500/50', 'animate-pulse');
+        this.feverText.textContent = '店長の一声 (0%)';
+
+        sfx.playFever();
+
+        // Fix all shelves immediately
+        this.shelves.forEach(s => {
+          s.state = 'OK';
+          s.misplacedProduct = null;
+          s.customerAnim = null;
+        });
+
+        this.cleanliness = 100;
+        this.score += 1000;
+        this.addCombo();
+
+        // Screen flash effect
+        document.body.classList.add('bg-emerald-900');
+        setTimeout(() => document.body.classList.remove('bg-emerald-900'), 300);
+
+        this.updateUI();
+        this.renderGrid();
+      }
+
+      startStage(stageIdx) {
+        this.currentStageIdx = stageIdx;
+        const preset = STAGE_PRESETS[this.currentStageIdx];
+
+        this.score = 0;
+        this.cleanliness = 100;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.timeLeft = preset.duration;
+        this.feverGauge = 0;
+        this.isPlaying = true;
+
+        // Reset shelves
+        this.shelves.forEach(s => {
+          s.state = 'OK';
+          s.misplacedProduct = null;
+          s.customerAnim = null;
+        });
+
+        // Hide modals
+        this.startModal.classList.add('hidden');
+        this.resultModal.classList.add('hidden');
+
+        this.stageNameDisplay.textContent = preset.name;
+        this.updateUI();
+        this.renderGrid();
+
+        // Start loops
+        clearInterval(this.timerId);
+        clearInterval(this.disruptLoopId);
+        clearInterval(this.decayLoopId);
+
+        // Timer interval
+        this.timerId = setInterval(() => {
+          this.timeLeft--;
+          this.timerDisplay.textContent = this.timeLeft;
+
+          if (this.timeLeft <= 0) {
+            this.endStage(true);
+          }
+        }, 1000);
+
+        // Customer disruption loop
+        this.disruptLoopId = setInterval(() => {
+          this.spawnDisruption();
+        }, preset.spawnInterval);
+
+        // Cleanliness decay loop
+        this.decayLoopId = setInterval(() => {
+          let decay = 0;
+          this.shelves.forEach(s => {
+            if (s.state === 'WARNING') decay += 0.8;
+            if (s.state === 'CRITICAL') {
+              decay += 2.2;
+              sfx.playWarning();
+            }
+            if (s.state === 'MISPLACED') decay += 1.5;
+          });
+
+          if (decay > 0) {
+            this.cleanliness = Math.max(0, this.cleanliness - decay);
+            this.updateUI();
+
+            if (this.cleanliness <= 0) {
+              this.endStage(false); // Game over by cleanliness depletion
+            }
+          }
+        }, 500);
+      }
+
+      spawnDisruption() {
+        if (!this.isPlaying) return;
+
+        const preset = STAGE_PRESETS[this.currentStageIdx];
+
+        // Find shelves eligible for disruption
+        const eligible = this.shelves.filter(s => s.state === 'OK');
+        if (eligible.length === 0) {
+          // Escalation: Turn WARNING into CRITICAL
+          const warnings = this.shelves.filter(s => s.state === 'WARNING');
+          if (warnings.length > 0) {
+            const target = warnings[Math.floor(Math.random() * warnings.length)];
+            target.state = 'CRITICAL';
+            target.customerAnim = '👿奥から取る客';
+            this.renderGrid();
+          }
+          return;
+        }
+
+        const target = eligible[Math.floor(Math.random() * eligible.length)];
+
+        // Decide if it's a misplaced item or normal facing disruption
+        if (Math.random() < preset.misplaceProb) {
+          target.state = 'MISPLACED';
+          // Select a different product
+          const otherProducts = PRODUCT_TYPES.filter(p => p.name !== target.product.name);
+          target.misplacedProduct = otherProducts[Math.floor(Math.random() * otherProducts.length)];
+          target.customerAnim = '🚶放置客';
+        } else {
+          target.state = 'WARNING';
+          target.customerAnim = Math.random() > 0.5 ? '🧒ちびっ子' : '🏃駆け込み';
+        }
+
+        this.renderGrid();
+      }
+
+      updateUI() {
+        this.cleanGaugeText.textContent = `${Math.floor(this.cleanliness)}%`;
+        this.cleanGaugeBar.style.width = `${Math.max(0, Math.min(100, this.cleanliness))}%`;
+
+        // Bar colors depending on level
+        if (this.cleanliness > 60) {
+          this.cleanGaugeBar.className = 'bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-200';
+        } else if (this.cleanliness > 30) {
+          this.cleanGaugeBar.className = 'bg-gradient-to-r from-amber-500 to-yellow-400 h-full rounded-full transition-all duration-200';
+        } else {
+          this.cleanGaugeBar.className = 'bg-gradient-to-r from-red-600 to-rose-500 h-full rounded-full transition-all duration-200 animate-pulse';
+        }
+
+        this.scoreDisplay.textContent = Math.floor(this.score);
+      }
+
+      endStage(timeUp) {
+        this.isPlaying = false;
+        clearInterval(this.timerId);
+        clearInterval(this.disruptLoopId);
+        clearInterval(this.decayLoopId);
+
+        const isSuccess = timeUp && this.cleanliness >= 50;
+
+        document.getElementById('finalScore').textContent = Math.floor(this.score);
+        document.getElementById('maxComboDisplay').textContent = `${this.maxCombo} 回`;
+        document.getElementById('finalCleanliness').textContent = `${Math.floor(this.cleanliness)}%`;
+
+        const resultTitle = document.getElementById('resultTitle');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultRank = document.getElementById('resultRank');
+        const managerComment = document.getElementById('managerComment');
+        const headerBg = document.getElementById('resultHeaderBg');
+
+        if (isSuccess) {
+          sfx.playClear();
+          resultTitle.textContent = 'シフト完了！ (合格)';
+          resultIcon.textContent = '🏅';
+          headerBg.className = 'absolute top-0 left-0 right-0 h-3 bg-emerald-500';
+
+          // Rank calculation
+          let rank = 'A';
+          let comment = '「しっかりとフェイスアップできているな！助かるよ！」';
+
+          if (this.cleanliness >= 90 && this.maxCombo >= 10) {
+            rank = 'SSS';
+            comment = '「神がかった手際だ！本部感謝状レベルの完璧な棚作成者だな！」';
+          } else if (this.cleanliness >= 80) {
+            rank = 'S';
+            comment = '「文句なしの綺麗さだ！この調子で次の時間帯も頼むぞ！」';
+          } else if (this.cleanliness >= 60) {
+            rank = 'B';
+            comment = '「よし、なんとか本部監査をパスできた。次はもう少し奥も気にしよう！」';
+          }
+
+          resultRank.textContent = rank;
+          managerComment.textContent = comment;
+          this.nextStageBtn.classList.remove('hidden');
+
+        } else {
+          sfx.playGameOver();
+          resultTitle.textContent = '店長からの呼び出し (失敗)';
+          resultIcon.textContent = '😱';
+          headerBg.className = 'absolute top-0 left-0 right-0 h-3 bg-red-600';
+
+          resultRank.textContent = 'F';
+          resultRank.className = 'text-3xl font-black text-red-500 neon-text-red';
+          managerComment.textContent = '「ねえ、棚見た…？ガタガタじゃないか！本部監査員が頭抱えて帰っちゃったよ…」';
+
+          this.nextStageBtn.classList.add('hidden');
+        }
+
+        this.resultModal.classList.remove('hidden');
+      }
+    }
+
+    // Initialize Game on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      window.game = new FacingGame();
+    });
+  </script>
+</body>
+</html>
