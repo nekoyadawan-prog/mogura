@@ -111,6 +111,7 @@
             background: #f59e0b;
             z-index: 5;
             box-shadow: 0 0 4px #f59e0b;
+            transition: left 0.3s;
         }
 
         .health-bar-fill {
@@ -129,6 +130,7 @@
             gap: 8px;
             position: relative;
             align-content: center;
+            z-index: 20;
         }
 
         main.grid-3x3 {
@@ -155,6 +157,18 @@
             perspective: 400px;
             cursor: pointer;
             min-height: 80px;
+            pointer-events: auto;
+        }
+
+        .shelf-slot.highlight {
+            border: 3px solid #fbbf24 !important;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.8), inset 0 8px 16px rgba(0,0,0,0.8) !important;
+            animation: pulseHighlight 0.8s infinite alternate;
+        }
+
+        @keyframes pulseHighlight {
+            0% { transform: scale(0.98); }
+            100% { transform: scale(1.02); }
         }
 
         .shelf-shadow {
@@ -204,6 +218,7 @@
             cursor: grab;
             filter: drop-shadow(0 8px 15px rgba(239, 68, 68, 0.9));
             animation: pulseAttention 0.5s infinite alternate cubic-bezier(0.4, 0, 0.6, 1);
+            pointer-events: auto;
         }
 
         @keyframes pulseAttention {
@@ -338,9 +353,18 @@
             line-height: 1.6;
         }
 
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
         .start-btn {
-            padding: 14px 44px;
-            font-size: 20px;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 18px;
             font-weight: 900;
             color: #fff;
             background: linear-gradient(135deg, #10b981, #059669);
@@ -349,11 +373,73 @@
             box-shadow: 0 6px #047857, 0 10px 20px rgba(0,0,0,0.5);
             cursor: pointer;
             transition: transform 0.1s;
+            pointer-events: auto;
         }
 
         .start-btn:active {
             transform: translateY(3px);
             box-shadow: 0 3px #047857, 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        .sub-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 6px #1e40af, 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .sub-btn:active {
+            box-shadow: 0 3px #1e40af, 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        /* チュートリアルポップアップ (pointer-events: noneにして下層のタップを阻害しない) */
+        #tut-banner {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 440px;
+            background: rgba(17, 24, 39, 0.95);
+            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            padding: 12px 16px;
+            z-index: 50;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            text-align: center;
+            animation: bounceIn 0.3s ease-out;
+            pointer-events: none;
+        }
+
+        #tut-banner.hidden { display: none; }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -20px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .tut-title {
+            font-size: 14px;
+            font-weight: 900;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+
+        .tut-text {
+            font-size: 13px;
+            color: #f3f4f6;
+            line-height: 1.4;
+        }
+
+        .tut-next-btn {
+            margin-top: 8px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -380,11 +466,18 @@
     </header>
 
     <div class="store-health-container">
-        <span class="status-title">棚キレイ度（ノルマ: 80%以上でクリア）</span>
+        <span id="norma-label" class="status-title">棚キレイ度（ノルマ: 80%以上でクリア）</span>
         <div class="health-bar-bg">
-            <div class="health-bar-threshold" title="80%ノルマライン"></div>
+            <div id="health-threshold" class="health-bar-threshold" title="ノルマライン"></div>
             <div id="health-bar" class="health-bar-fill"></div>
         </div>
+    </div>
+
+    <!-- チュートリアル指示バナー -->
+    <div id="tut-banner" class="hidden">
+        <div id="tut-title" class="tut-title">STEP 1: 前面へ引き出す</div>
+        <div id="tut-text" class="tut-text">黄枠の奥に引っ込んだ棚をタップ！</div>
+        <button id="tut-btn" class="tut-next-btn hidden">次へ</button>
     </div>
 
     <main id="shelf-grid" class="grid-3x3"></main>
@@ -392,20 +485,17 @@
     <div id="start-overlay" class="overlay">
         <div class="game-title">全開！フェイスアップ</div>
         <p class="game-desc">
-            <b>【超シビア！プロ店員認定試験】</b><br><br>
-            ① <b>タップ</b>で奥の商品を手前に補充！<br>
-            ② 間違い商品は<b>ドラッグ＆ドロップで正解棚へ！</b><br><br>
-            <span style="color: #ef4444; font-weight: bold;">
-            【クリア条件】20秒経過時にキレイ度80%以上！<br>
-            ・キレイ度0%で即アウト！<br>
-            ・置き間違いはキレイ度−40%の極大損害！
-            </span>
+            コンビニ店員となって棚を整頓！<br>
+            20秒間でキレイ度80%以上を維持しよう！
         </p>
-        <button id="start-btn" class="start-btn">勤務開始！</button>
+        <div class="btn-group">
+            <button id="start-btn" class="start-btn">本番モード（激辛）</button>
+            <button id="training-btn" class="start-btn sub-btn">トレーニング（体験＆練習）</button>
+        </div>
     </div>
 
     <div id="clear-overlay" class="overlay hidden">
-        <div class="game-title" style="color: #10b981;">STAGE CLEAR!</div>
+        <div id="clear-title" class="game-title" style="color: #10b981;">STAGE CLEAR!</div>
         <p id="clear-desc" class="game-desc">素晴らしい判断力です！</p>
         <button id="next-btn" class="start-btn">次のステージへ！</button>
     </div>
@@ -518,6 +608,9 @@
         timeLeft: STAGE_TIME,
         storeHealth: 100,
         isPlaying: false,
+        isTraining: false,
+        tutStep: 0,
+        normaRatio: 0.8,
         shelves: [],
         activeDrag: null,
         sound: new SoundEngine(),
@@ -527,14 +620,18 @@
 
     const gridEl = document.getElementById('shelf-grid');
     const healthBarEl = document.getElementById('health-bar');
+    const healthThresholdEl = document.getElementById('health-threshold');
+    const normaLabelEl = document.getElementById('norma-label');
     const scoreEl = document.getElementById('score-val');
     const stageEl = document.getElementById('stage-val');
     const timerEl = document.getElementById('timer-val');
     const startOverlay = document.getElementById('start-overlay');
     const clearOverlay = document.getElementById('clear-overlay');
+    const clearTitleEl = document.getElementById('clear-title');
     const gameoverOverlay = document.getElementById('gameover-overlay');
     const gameoverReasonEl = document.getElementById('gameover-reason');
     const startBtn = document.getElementById('start-btn');
+    const trainingBtn = document.getElementById('training-btn');
     const nextBtn = document.getElementById('next-btn');
     const retryBtn = document.getElementById('retry-btn');
     const finalStageEl = document.getElementById('final-stage');
@@ -542,6 +639,11 @@
     const clearDescEl = document.getElementById('clear-desc');
     const canvas = document.getElementById('fx-canvas');
     const ctx = canvas.getContext('2d');
+
+    const tutBanner = document.getElementById('tut-banner');
+    const tutTitle = document.getElementById('tut-title');
+    const tutText = document.getElementById('tut-text');
+    const tutBtn = document.getElementById('tut-btn');
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -551,7 +653,7 @@
     resizeCanvas();
 
     function setupStageLayout() {
-        if (state.stage >= 3) {
+        if (!state.isTraining && state.stage >= 3) {
             gridEl.className = 'grid-4x3';
             state.availableProducts = ALL_PRODUCTS;
         } else {
@@ -559,7 +661,7 @@
             state.availableProducts = ALL_PRODUCTS.slice(0, 4);
         }
 
-        const totalSlots = state.stage >= 3 ? 12 : 9;
+        const totalSlots = (!state.isTraining && state.stage >= 3) ? 12 : 9;
         gridEl.innerHTML = '';
         state.shelves = [];
 
@@ -607,12 +709,15 @@
         }
     }
 
-    function spawnMisplacedItem(slotIndex) {
+    function spawnMisplacedItem(slotIndex, forcedProduct = null) {
         const shelf = state.shelves[slotIndex];
         if (shelf.misplacedProduct) return;
 
-        const otherProducts = state.availableProducts.filter(p => p.id !== shelf.productType.id);
-        const wrongProduct = otherProducts[Math.floor(Math.random() * otherProducts.length)];
+        let wrongProduct = forcedProduct;
+        if (!wrongProduct) {
+            const otherProducts = state.availableProducts.filter(p => p.id !== shelf.productType.id);
+            wrongProduct = otherProducts[Math.floor(Math.random() * otherProducts.length)];
+        }
 
         const misEl = document.createElement('div');
         misEl.className = 'misplaced-item';
@@ -698,12 +803,16 @@
                 }
                 srcShelf.misplacedProduct = null;
                 element.remove();
+
+                if (state.isTraining && state.tutStep === 2) {
+                    clearHighlights();
+                    advanceTutStep(3);
+                }
             } else {
-                // 間違った棚へ誤ドロップ：一気に大幅削りペナルティ
+                // 間違った棚へ誤ドロップ
                 state.sound.playError();
                 state.score = Math.max(0, state.score - 200);
 
-                // 対象棚・元棚の綺麗度を超大幅削減（合計キレイ度に直接激痛）
                 targetShelf.cleanliness = Math.max(0, targetShelf.cleanliness - 50);
                 state.shelves[sourceIndex].cleanliness = Math.max(0, state.shelves[sourceIndex].cleanliness - 30);
 
@@ -756,9 +865,10 @@
     }
 
     function onShelfTap(index) {
-        if (!state.isPlaying) return;
-        const shelf = state.shelves[index];
+        // チュートリアル中(STEP 1)またはプレイ中のみ許可
+        if (!state.isPlaying && !(state.isTraining && state.tutStep === 1)) return;
 
+        const shelf = state.shelves[index];
         if (shelf.cleanliness >= 95) return;
 
         state.sound.playTap();
@@ -770,18 +880,62 @@
 
         state.score += 15;
         updateUI();
+
+        if (state.isTraining && state.tutStep === 1) {
+            clearHighlights();
+            advanceTutStep(2);
+        }
     }
+
+    /* チュートリアル制御 */
+    function clearHighlights() {
+        state.shelves.forEach(s => s.element.classList.remove('highlight'));
+    }
+
+    function advanceTutStep(step) {
+        state.tutStep = step;
+        tutBanner.classList.remove('hidden');
+        tutBtn.classList.add('hidden');
+
+        if (step === 1) {
+            tutTitle.textContent = 'STEP 1: 前面へ引き出す（タップ）';
+            tutText.textContent = '奥に引っ込んだ【黄枠の棚】をタップしてください！';
+            state.shelves[0].cleanliness = 20;
+            state.shelves[0].element.classList.add('receded', 'highlight');
+        } else if (step === 2) {
+            tutTitle.textContent = 'STEP 2: 戻し間違いの整理（ドラッグ）';
+            tutText.textContent = '【中央の棚】に違う商品が！【右上の本来の棚】へドラッグ！';
+            const targetProduct = state.shelves[2].productType;
+            spawnMisplacedItem(4, targetProduct);
+            state.shelves[4].element.classList.add('highlight');
+            state.shelves[2].element.classList.add('highlight');
+        } else if (step === 3) {
+            tutTitle.textContent = 'STEP 3: ルールとクリア条件';
+            tutText.textContent = '20秒以内に棚キレイ度をノルマ以上（トレーニングは50%）に維持せよ！0%で即アウト！';
+            tutBtn.classList.remove('hidden');
+        } else if (step === 4) {
+            tutBanner.classList.add('hidden');
+            state.timeLeft = STAGE_TIME;
+            state.isPlaying = true;
+            if (state.loopTimer) clearInterval(state.loopTimer);
+            state.loopTimer = setInterval(gameLoop, 100);
+        }
+    }
+
+    tutBtn.addEventListener('click', () => {
+        if (state.tutStep === 3) advanceTutStep(4);
+    });
 
     function gameLoop() {
         if (!state.isPlaying) return;
 
         state.timeLeft -= 0.1;
 
-        // タイムアップ判定（ノルマ80%チェック）
         if (state.timeLeft <= 0) {
             state.timeLeft = 0;
-            if (state.storeHealth < 80) {
-                gameOver("20秒経過時点で棚キレイ度が80%未満だったため不合格です！");
+            const targetNorma = Math.floor(state.normaRatio * 100);
+            if (state.storeHealth < targetNorma) {
+                gameOver(`20秒経過時点で棚キレイ度が${targetNorma}%未満だったため不合格です！`);
             } else {
                 stageClear();
             }
@@ -790,9 +944,9 @@
 
         let totalCleanliness = 0;
 
-        // STAGE 1から高速化・激甚化
-        const decayMultiplier = 0.65 + (state.stage * 0.25);
-        const spawnChance = 0.06 + (state.stage * 0.035);
+        // 難易度調整パラメータ
+        const decayMultiplier = state.isTraining ? 0.35 : (0.65 + (state.stage * 0.25));
+        const spawnChance = state.isTraining ? 0.03 : (0.06 + (state.stage * 0.035));
 
         if (Math.random() < spawnChance) {
             const randomIndex = Math.floor(Math.random() * state.shelves.length);
@@ -800,8 +954,7 @@
         }
 
         state.shelves.forEach(shelf => {
-            // 放置アイテムがある棚は劣化スピード1.8倍
-            let penalty = shelf.misplacedProduct ? 1.5 : 0;
+            let penalty = shelf.misplacedProduct ? 1.2 : 0;
             shelf.cleanliness = Math.max(0, shelf.cleanliness - (Math.random() * decayMultiplier + penalty));
             totalCleanliness += shelf.cleanliness;
 
@@ -817,7 +970,6 @@
 
         state.storeHealth = totalCleanliness / state.shelves.length;
 
-        // キレイ度0%で即アウト判定
         if (state.storeHealth <= 0) {
             gameOver("棚キレイ度が完全に底を突き、店舗が壊滅しました！");
         }
@@ -852,22 +1004,28 @@
 
     function updateUI() {
         scoreEl.textContent = Math.floor(state.score);
-        stageEl.textContent = state.stage;
+        stageEl.textContent = state.isTraining ? 'TR' : state.stage;
         timerEl.textContent = `${Math.ceil(state.timeLeft)}s`;
         healthBarEl.style.width = `${state.storeHealth}%`;
 
-        if (state.storeHealth < 80) {
+        const targetNorma = Math.floor(state.normaRatio * 100);
+        normaLabelEl.textContent = `棚キレイ度（ノルマ: ${targetNorma}%以上でクリア）`;
+        healthThresholdEl.style.left = `${targetNorma}%`;
+
+        if (state.storeHealth < targetNorma) {
             healthBarEl.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
         } else {
             healthBarEl.style.background = 'linear-gradient(90deg, #10b981, #059669)';
         }
     }
 
-    function startStage() {
+    function startStage(isTrainingMode = false) {
         state.sound.init();
+        state.isTraining = isTrainingMode;
+        state.normaRatio = isTrainingMode ? 0.5 : 0.8;
         state.timeLeft = STAGE_TIME;
         state.storeHealth = 100;
-        state.isPlaying = true;
+        state.isPlaying = false;
 
         startOverlay.classList.add('hidden');
         clearOverlay.classList.add('hidden');
@@ -876,8 +1034,14 @@
         setupStageLayout();
         updateUI();
 
-        if (state.loopTimer) clearInterval(state.loopTimer);
-        state.loopTimer = setInterval(gameLoop, 100);
+        if (state.isTraining) {
+            advanceTutStep(1);
+        } else {
+            tutBanner.classList.add('hidden');
+            state.isPlaying = true;
+            if (state.loopTimer) clearInterval(state.loopTimer);
+            state.loopTimer = setInterval(gameLoop, 100);
+        }
     }
 
     function stageClear() {
@@ -885,11 +1049,17 @@
         clearInterval(state.loopTimer);
         state.sound.playClear();
 
-        if (state.stage === 2) {
+        if (state.isTraining) {
+            clearTitleEl.textContent = "TRAINING COMPLETED!";
+            clearDescEl.innerHTML = `基礎トレーニング修了！<br><b>準備完了です！本番モードのプロ領域に挑みましょう！</b>`;
+        } else if (state.stage === 2) {
+            clearTitleEl.textContent = "STAGE CLEAR!";
             clearDescEl.innerHTML = `STAGE 2 クリア！<br><span style="color:#ef4444; font-weight:bold;">【警告】次から12棚に拡大！ノルマ80%維持は至難の業です！</span>`;
         } else if (state.stage >= 4) {
+            clearTitleEl.textContent = "STAGE CLEAR!";
             clearDescEl.innerHTML = `STAGE ${state.stage} クリア！<br><b>神領域！奇跡のプロ店員です！</b>`;
         } else {
+            clearTitleEl.textContent = "STAGE CLEAR!";
             clearDescEl.textContent = `ノルマ達成分！STAGE ${state.stage} クリア！`;
         }
 
@@ -897,8 +1067,14 @@
     }
 
     function nextStage() {
-        state.stage++;
-        startStage();
+        if (state.isTraining) {
+            state.score = 0;
+            state.stage = 1;
+            startStage(false);
+        } else {
+            state.stage++;
+            startStage(false);
+        }
     }
 
     function gameOver(reason) {
@@ -907,7 +1083,7 @@
         state.sound.playDamage();
 
         gameoverReasonEl.textContent = reason || "棚が荒れ果てて店長に怒られてしまいました。";
-        finalStageEl.textContent = state.stage;
+        finalStageEl.textContent = state.isTraining ? 'TR' : state.stage;
         finalScoreEl.textContent = Math.floor(state.score);
         gameoverOverlay.classList.remove('hidden');
     }
@@ -915,13 +1091,21 @@
     startBtn.addEventListener('click', () => {
         state.score = 0;
         state.stage = 1;
-        startStage();
+        startStage(false);
     });
-    nextBtn.addEventListener('click', nextStage);
-    retryBtn.addEventListener('click', () => {
+
+    trainingBtn.addEventListener('click', () => {
         state.score = 0;
         state.stage = 1;
-        startStage();
+        startStage(true);
+    });
+
+    nextBtn.addEventListener('click', nextStage);
+
+    retryBtn.addEventListener('click', () => {
+        state.score = 0;
+        if (!state.isTraining) state.stage = 1;
+        startStage(state.isTraining);
     });
 
     setupStageLayout();
